@@ -23,6 +23,8 @@ import (
 	"github.com/0chain/gosdk/zboxcore/zboxutil"
 )
 
+const WriteMarkerLockTimeOut = 2000 * time.Minute
+
 type CopyRequest struct {
 	allocationObj  *Allocation
 	allocationID   string
@@ -177,8 +179,8 @@ func (req *CopyRequest) ProcessCopy() error {
 		return fmt.Errorf("Copy failed: %s", err.Error())
 	}
 	err = writeMarkerMutex.Lock(req.ctx, &req.copyMask, req.maskMU,
-		req.blobbers, &req.Consensus, 0, time.Minute, req.connectionID)
-	defer writeMarkerMutex.Unlock(req.ctx, req.copyMask, req.blobbers, time.Minute, req.connectionID) //nolint: errcheck
+		req.blobbers, &req.Consensus, 0, WriteMarkerLockTimeOut, req.connectionID)
+	defer writeMarkerMutex.Unlock(req.ctx, req.copyMask, req.blobbers, WriteMarkerLockTimeOut, req.connectionID) //nolint: errcheck
 	if err != nil {
 		return fmt.Errorf("Copy failed: %s", err.Error())
 	}

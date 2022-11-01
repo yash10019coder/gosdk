@@ -175,8 +175,8 @@ func (req *RenameRequest) ProcessRename() error {
 	}
 
 	err = writeMarkerMutex.Lock(req.ctx, &req.renameMask,
-		req.maskMU, req.blobbers, &req.consensus, 0, time.Minute, req.connectionID)
-	defer writeMarkerMutex.Unlock(req.ctx, req.renameMask, req.blobbers, time.Minute, req.connectionID) //nolint: errcheck
+		req.maskMU, req.blobbers, &req.consensus, 0, WriteMarkerLockTimeOut, req.connectionID)
+	defer writeMarkerMutex.Unlock(req.ctx, req.renameMask, req.blobbers, WriteMarkerLockTimeOut, req.connectionID) //nolint: errcheck
 	if err != nil {
 		return fmt.Errorf("rename failed: %s", err.Error())
 	}

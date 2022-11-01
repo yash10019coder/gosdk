@@ -80,7 +80,7 @@ func TestWriteMarkerMutext_Should_Lock(t *testing.T) {
 	consensus.Init(a.consensusThreshold, a.fullconsensus)
 
 	err := mutex.Lock(context.TODO(), &mask, mu, a.Blobbers,
-		consensus, 0, time.Minute, zboxutil.NewConnectionId())
+		consensus, 0, WriteMarkerLockTimeOut, zboxutil.NewConnectionId())
 	require.Nil(t, err)
 
 }

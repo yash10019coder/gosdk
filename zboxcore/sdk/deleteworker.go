@@ -69,7 +69,7 @@ func (req *DeleteRequest) deleteBlobberFile(
 
 	for i := 0; i < 3; i++ {
 		err, shouldContinue = func() (err error, shouldContinue bool) {
-			ctx, cncl := context.WithTimeout(req.ctx, time.Minute)
+			ctx, cncl := context.WithTimeout(req.ctx, DefaultUploadTimeOut)
 			resp, err = zboxutil.Client.Do(httpreq.WithContext(ctx))
 			cncl()
 
@@ -205,9 +205,9 @@ func (req *DeleteRequest) ProcessDelete() (err error) {
 	}
 	err = writeMarkerMutex.Lock(
 		req.ctx, &req.deleteMask, req.maskMu,
-		req.blobbers, &req.consensus, removedNum, time.Minute, req.connectionID)
+		req.blobbers, &req.consensus, removedNum, WriteMarkerLockTimeOut, req.connectionID)
 
-	defer writeMarkerMutex.Unlock(req.ctx, req.deleteMask, req.blobbers, time.Minute, req.connectionID) //nolint: errcheck
+	defer writeMarkerMutex.Unlock(req.ctx, req.deleteMask, req.blobbers, WriteMarkerLockTimeOut, req.connectionID) //nolint: errcheck
 	if err != nil {
 		return fmt.Errorf("Delete failed: %s", err.Error())
 	}
