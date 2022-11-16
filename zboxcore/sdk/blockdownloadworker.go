@@ -154,7 +154,8 @@ func (req *BlockDownloadRequest) downloadBlobberBlock() {
 			header.DownloadMode = req.contentMode
 		}
 
-		ctx, cncl := context.WithTimeout(req.ctx, (time.Second * 30))
+		ctx, cncl := context.WithTimeout(req.ctx, DefaultUploadTimeOut)
+		defer cncl()
 		shouldRetry := false
 
 		header.ToHeader(httpreq)
