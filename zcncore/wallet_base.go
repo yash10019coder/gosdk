@@ -73,6 +73,7 @@ const (
 	STORAGESC_GET_READ_POOL_INFO       = STORAGESC_PFX + "/getReadPoolStat"
 	STORAGESC_GET_STAKE_POOL_INFO      = STORAGESC_PFX + "/getStakePoolStat"
 	STORAGESC_GET_STAKE_POOL_USER_INFO = STORAGESC_PFX + "/getUserStakePoolStat"
+	STORAGESC_GET_USER_LOCKED_TOTAL    = STORAGESC_PFX + "/getUserLockedTotal"
 	STORAGESC_GET_BLOBBERS             = STORAGESC_PFX + "/getblobbers"
 	STORAGESC_GET_BLOBBER              = STORAGESC_PFX + "/getBlobber"
 	STORAGESC_GET_TRANSACTIONS         = STORAGESC_PFX + "/transactions"
@@ -994,6 +995,9 @@ func GetStakePoolInfo(blobberID string, cb GetInfoCallback) (err error) {
 }
 
 // GetStakePoolUserInfo for a user.
+// # Inputs
+//   - clientID: wallet id
+//   - cb: callback for checking result
 func GetStakePoolUserInfo(clientID string, cb GetInfoCallback) (err error) {
 	if err = CheckConfig(); err != nil {
 		return
@@ -1006,6 +1010,42 @@ func GetStakePoolUserInfo(clientID string, cb GetInfoCallback) (err error) {
 	})
 	go GetInfoFromSharders(url, OpStorageSCGetStakePoolInfo, cb)
 	return
+}
+
+// GetUserLockedTotal get total token user locked
+// # Inputs
+//   - clientID wallet id
+func GetUserLockedTotal(clientID string) (int64, error) {
+
+	err := checkSdkInit()
+	if err != nil {
+		return 0, err
+	}
+
+	var url = withParams(STORAGESC_GET_USER_LOCKED_TOTAL, Params{
+		"client_id": clientID,
+	})
+	cb := createGetInfoCallback()
+	go GetInfoFromSharders(url, OpStorageSCGetStakePoolInfo, cb)
+	info, err := cb.Wait()
+	if err != nil {
+		return 0, err
+	}
+
+	result := make(map[string]int64)
+
+	err = json.Unmarshal([]byte(info), &result)
+	if err != nil {
+		return 0, errors.Throw(err, "invalid json format")
+	}
+
+	total, ok := result["total"]
+	if ok {
+		return total, nil
+	}
+
+	return 0, errors.New("", "invalid result")
+
 }
 
 // GetBlobbers obtains list of all active blobbers.
@@ -1107,4 +1147,41 @@ func GetPublicEncryptionKey(mnemonic string) (string, error) {
 		return "", err
 	}
 	return encScheme.GetPublicKey()
+}
+
+func createGetInfoCallback() *getInfoCallback {
+	return &getInfoCallback{
+		callback: make(chan bool),
+	}
+}
+
+type getInfoCallback struct {
+	callback chan bool
+	status   int
+	info     string
+	err      string
+}
+
+func (cb *getInfoCallback) OnInfoAvailable(op int, status int, info string, err string) {
+
+	// if status == StatusSuccess then info is valid
+	// is status != StatusSuccess then err will give the reason
+
+	cb.status = status
+	if status == StatusSuccess {
+		cb.info = info
+	} else {
+		cb.err = err
+	}
+
+	cb.callback <- true
+}
+
+func (cb *getInfoCallback) Wait() (string, error) {
+	<-cb.callback
+	if cb.err == "" {
+		return cb.info, nil
+	}
+
+	return "", errors.New("", cb.err)
 }

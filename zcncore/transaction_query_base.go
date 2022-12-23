@@ -40,13 +40,17 @@ type QueryResult struct {
 // QueryResultHandle handle query response, return true if it is a consensus-result
 type QueryResultHandle func(result QueryResult) bool
 
+// TransactionQueryScheme the scheme of transaction query on sharders
 type TransactionQueryScheme interface {
 	Reset()
 	FromAll(ctx context.Context, query string, handle QueryResultHandle) error
 	FromAny(ctx context.Context, query string) (QueryResult, error)
 	GetInfo(ctx context.Context, query string) (*QueryResult, error)
+	GetFastConfirmation(ctx context.Context, txnHash string) (*blockHeader, map[string]json.RawMessage, *blockHeader, error)
+	GetConsensusConfirmation(ctx context.Context, numSharders int, txnHash string) (*blockHeader, map[string]json.RawMessage, *blockHeader, error)
 }
 
+// NewTransactionQuery Create a TransactionQuery scheme instance
 func NewTransactionQuery(sharders []string) (TransactionQueryScheme, error) {
 
 	if len(sharders) == 0 {
@@ -332,7 +336,7 @@ func (tq *transactionQuery) FromAny(ctx context.Context, query string) (QueryRes
 
 }
 
-func (tq *transactionQuery) getConsensusConfirmation(ctx context.Context, numSharders int, txnHash string) (*blockHeader, map[string]json.RawMessage, *blockHeader, error) {
+func (tq *transactionQuery) GetConsensusConfirmation(ctx context.Context, numSharders int, txnHash string) (*blockHeader, map[string]json.RawMessage, *blockHeader, error) {
 	maxConfirmation := int(0)
 	txnConfirmations := make(map[string]int)
 	var confirmationBlockHeader *blockHeader
@@ -413,8 +417,8 @@ func (tq *transactionQuery) getConsensusConfirmation(ctx context.Context, numSha
 	return confirmationBlockHeader, confirmationBlock, lfbBlockHeader, nil
 }
 
-// getFastConfirmation get txn confirmation from a random online sharder
-func (tq *transactionQuery) getFastConfirmation(ctx context.Context, txnHash string) (*blockHeader, map[string]json.RawMessage, *blockHeader, error) {
+// GetFastConfirmation get txn confirmation from a random online sharder
+func (tq *transactionQuery) GetFastConfirmation(ctx context.Context, txnHash string) (*blockHeader, map[string]json.RawMessage, *blockHeader, error) {
 	var confirmationBlockHeader *blockHeader
 	var confirmationBlock map[string]json.RawMessage
 	var lfbBlockHeader blockHeader

@@ -708,7 +708,7 @@ func (t *Transaction) GetVerifyConfirmationStatus() ConfirmationStatus {
 	return ConfirmationStatus(t.verifyConfirmationStatus)
 }
 
-//RegisterMultiSig register a multisig wallet with the SC.
+// RegisterMultiSig register a multisig wallet with the SC.
 func (t *Transaction) RegisterMultiSig(walletstr string, mswallet string) error {
 	w, err := GetWallet(walletstr)
 	if err != nil {
@@ -759,7 +759,7 @@ func NewMSTransaction(walletstr string, cb TransactionCallback) (*Transaction, e
 	return t, nil
 }
 
-//RegisterVote register a multisig wallet with the SC.
+// RegisterVote register a multisig wallet with the SC.
 func (t *Transaction) RegisterVote(signerwalletstr string, msvstr string) error {
 
 	w, err := GetWallet(signerwalletstr)
@@ -898,7 +898,7 @@ func (t *Transaction) Verify() error {
 
 			tq.Reset()
 			// Get transaction confirmationBlock from a random sharder
-			confirmBlockHeader, confirmationBlock, lfbBlockHeader, err := tq.getFastConfirmation(context.TODO(), t.txnHash)
+			confirmBlockHeader, confirmationBlock, lfbBlockHeader, err := tq.GetFastConfirmation(context.TODO(), t.txnHash)
 
 			if err != nil {
 				now := int64(common.Now())
@@ -913,7 +913,7 @@ func (t *Transaction) Verify() error {
 				// transaction is done or expired. it means random sharder might be outdated, try to query it from s/S sharders to confirm it
 				if util.MaxInt64(lfbBlockHeader.getCreationDate(now), now) >= (t.txn.CreationDate + int64(defaultTxnExpirationSeconds)) {
 					logging.Info("falling back to ", getMinShardersVerify(), " of ", len(_config.chain.Sharders), " Sharders")
-					confirmBlockHeader, confirmationBlock, lfbBlockHeader, err = tq.getConsensusConfirmation(context.TODO(), getMinShardersVerify(), t.txnHash)
+					confirmBlockHeader, confirmationBlock, lfbBlockHeader, err = tq.GetConsensusConfirmation(context.TODO(), getMinShardersVerify(), t.txnHash)
 				}
 
 				// txn not found in fast confirmation/consensus confirmation
